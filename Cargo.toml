@@ -1,0 +1,26 @@
+[package]
+name = "marble-marketplace-contract-wrapper"
+version = "0.1.0"
+authors = ["markl"]
+edition = "2018"
+
+[dev-dependencies]
+near-sdk = "4.0.0-pre.3"
+near-contract-standards = "4.0.0-pre.3"
+near-sdk-sim = "4.0.0-pre.3"
+marble-marketplace-contract = { path = "./marble-marketplace-contract" }
+test-token = { path = "./test-token" }
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true
+
+[workspace]
+members = [
+    "marble-marketplace-contract",
+    "test-token",
+]

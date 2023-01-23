@@ -56,7 +56,8 @@ impl NonFungibleTokenApprovalsReceiver for Contract {
         let nft_contract_id = env::predecessor_account_id();
         let signer_id = env::signer_account_id();
         assert_ne!(
-            env::current_account_id(), nft_contract_id,
+            env::current_account_id(),
+            nft_contract_id,
             "Marble: nft_on_approve should only be called via cross-contract call"
         );
         assert_eq!(owner_id, signer_id, "Marble: owner_id should be signer_id");
@@ -80,19 +81,19 @@ impl NonFungibleTokenApprovalsReceiver for Contract {
             seller_token_series_id,
             buyer_nft_contract_id,
             buyer_token_id,
-            reserve_price
+            reserve_price,
         } = near_sdk::serde_json::from_str(&msg).expect("Not valid MarketArgs");
 
         if market_type == "sale" {
             assert!(price.is_some(), "Marble: price not specified");
 
             // //replace old data approval id
-            let buyer_contract_account_id_token_id = make_triple(&nft_contract_id,
-                            &owner_id,
-                            &token_id);
-            if let Some(mut old_trade) = self.trades.get(&buyer_contract_account_id_token_id){
+            let buyer_contract_account_id_token_id =
+                make_triple(&nft_contract_id, &owner_id, &token_id);
+            if let Some(mut old_trade) = self.trades.get(&buyer_contract_account_id_token_id) {
                 old_trade.approval_id = approval_id;
-                self.trades.insert(&buyer_contract_account_id_token_id,&old_trade);
+                self.trades
+                    .insert(&buyer_contract_account_id_token_id, &old_trade);
             }
 
             let storage_amount = self.storage_minimum_balance().0;
@@ -101,15 +102,16 @@ impl NonFungibleTokenApprovalsReceiver for Contract {
                 (self.get_supply_by_owner_id(signer_id).0 + 1) as u128 * storage_amount;
 
             if owner_paid_storage < signer_storage_required {
-                let notif=format!("Insufficient storage paid: {}, for {} sales at {} rate of per sale",
-                owner_paid_storage,
-                signer_storage_required / storage_amount,
-                storage_amount
+                let notif = format!(
+                    "Insufficient storage paid: {}, for {} sales at {} rate of per sale",
+                    owner_paid_storage,
+                    signer_storage_required / storage_amount,
+                    storage_amount
                 );
                 env::log_str(&notif);
                 return;
             }
-            
+
             self.internal_delete_market_data(&nft_contract_id, &token_id);
 
             let ft_token_id_res = ft_token_id.unwrap_or(near_account());
@@ -129,11 +131,14 @@ impl NonFungibleTokenApprovalsReceiver for Contract {
                 ended_at,
                 end_price,
                 is_auction,
-                reserve_price
+                reserve_price,
             );
         } else if market_type == "accept_offer" {
             assert!(buyer_id.is_some(), "Marble: Account id is not specified");
-            assert!(price.is_some(), "Marble: Price is not specified (for check)");
+            assert!(
+                price.is_some(),
+                "Marble: Price is not specified (for check)"
+            );
 
             self.internal_accept_offer(
                 nft_contract_id,
@@ -143,13 +148,16 @@ impl NonFungibleTokenApprovalsReceiver for Contract {
                 approval_id,
                 price.unwrap().0,
             );
-        } else if market_type == "accept_offer_paras_series" {
+        } else if market_type == "accept_offer_marble_series" {
             assert!(buyer_id.is_some(), "Marble: Account id is not specified");
             assert!(
-                self.paras_nft_contracts.contains(&nft_contract_id),
+                self.marble_nft_contracts.contains(&nft_contract_id),
                 "Marble: accepting offer series for Marble NFT only"
             );
-            assert!(price.is_some(), "Marble: Price is not specified (for check)");
+            assert!(
+                price.is_some(),
+                "Marble: Price is not specified (for check)"
+            );
 
             self.internal_accept_offer_series(
                 nft_contract_id,
@@ -167,12 +175,12 @@ impl NonFungibleTokenApprovalsReceiver for Contract {
                 self.market.insert(&contract_and_token_id, &market_data);
             }
             // //replace old data approval id
-            let buyer_contract_account_id_token_id = make_triple(&nft_contract_id,
-                            &owner_id,
-                            &token_id);
-            if let Some(mut old_trade) = self.trades.get(&buyer_contract_account_id_token_id){
+            let buyer_contract_account_id_token_id =
+                make_triple(&nft_contract_id, &owner_id, &token_id);
+            if let Some(mut old_trade) = self.trades.get(&buyer_contract_account_id_token_id) {
                 old_trade.approval_id = approval_id;
-                self.trades.insert(&buyer_contract_account_id_token_id,&old_trade);
+                self.trades
+                    .insert(&buyer_contract_account_id_token_id, &old_trade);
             }
 
             let storage_amount = self.storage_minimum_balance().0;
@@ -181,10 +189,11 @@ impl NonFungibleTokenApprovalsReceiver for Contract {
                 (self.get_supply_by_owner_id(signer_id).0 + 1) as u128 * storage_amount;
 
             if owner_paid_storage < signer_storage_required {
-                let notif=format!("Insufficient storage paid: {}, for {} sales at {} rate of per sale",
-                                  owner_paid_storage,
-                                  signer_storage_required / storage_amount,
-                                  storage_amount
+                let notif = format!(
+                    "Insufficient storage paid: {}, for {} sales at {} rate of per sale",
+                    owner_paid_storage,
+                    signer_storage_required / storage_amount,
+                    storage_amount
                 );
                 env::log_str(&notif);
                 return;
@@ -200,10 +209,15 @@ impl NonFungibleTokenApprovalsReceiver for Contract {
                 approval_id,
             );
         } else if market_type == "accept_trade" {
-
             assert!(buyer_id.is_some(), "Marble: Account id is not specified");
-            assert!(buyer_nft_contract_id.is_some(), "Marble: Buyer NFT contract id is not specified");
-            assert!(buyer_token_id.is_some(), "Marble: Buyer token id is not specified");
+            assert!(
+                buyer_nft_contract_id.is_some(),
+                "Marble: Buyer NFT contract id is not specified"
+            );
+            assert!(
+                buyer_token_id.is_some(),
+                "Marble: Buyer token id is not specified"
+            );
 
             self.internal_accept_trade(
                 nft_contract_id,
@@ -212,18 +226,22 @@ impl NonFungibleTokenApprovalsReceiver for Contract {
                 owner_id,
                 approval_id,
                 buyer_nft_contract_id.unwrap(),
-                buyer_token_id.unwrap()
+                buyer_token_id.unwrap(),
             );
-
-        } else if market_type == "accept_trade_paras_series" {
-
+        } else if market_type == "accept_trade_marble_series" {
             assert!(buyer_id.is_some(), "Marble: Account id is not specified");
             assert!(
-                self.paras_nft_contracts.contains(&nft_contract_id),
+                self.marble_nft_contracts.contains(&nft_contract_id),
                 "Marble: accepting offer series for Marble NFT only"
             );
-            assert!(buyer_nft_contract_id.is_some(), "Marble: Buyer NFT contract id is not specified");
-            assert!(buyer_token_id.is_some(), "Marble: Buyer token id is not specified");
+            assert!(
+                buyer_nft_contract_id.is_some(),
+                "Marble: Buyer NFT contract id is not specified"
+            );
+            assert!(
+                buyer_token_id.is_some(),
+                "Marble: Buyer token id is not specified"
+            );
 
             self.internal_accept_trade_series(
                 nft_contract_id,
@@ -232,9 +250,8 @@ impl NonFungibleTokenApprovalsReceiver for Contract {
                 owner_id,
                 approval_id,
                 buyer_nft_contract_id.unwrap(),
-                buyer_token_id.unwrap()
+                buyer_token_id.unwrap(),
             );
-
         }
     }
 }

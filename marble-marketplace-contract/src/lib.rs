@@ -2309,7 +2309,7 @@ impl Contract {
 
         if selected_bid.bidder_id == env::predecessor_account_id() {
             assert!(
-                selected_bid.price.0 > market_data.reserve_price.0,
+                selected_bid.price.0 > market_data.reserve_price,
                 "Marble: Your bid price isn't bigger than reserve price."
             );
         }

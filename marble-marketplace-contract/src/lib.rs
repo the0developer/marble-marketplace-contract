@@ -166,7 +166,7 @@ pub struct ContractV2 {
     pub storage_deposits: LookupMap<AccountId, Balance>,
     pub by_owner_id: LookupMap<AccountId, UnorderedSet<TokenId>>,
     pub offers: UnorderedMap<ContractAccountIdTokenId, OfferData>,
-    pub paras_nft_contracts: UnorderedSet<AccountId>,
+    pub marble_nft_contracts: UnorderedSet<AccountId>,
     pub transaction_fee: TransactionFee,
     pub trades: UnorderedMap<ContractAccountIdTokenId, TradeList>,
 }
@@ -189,7 +189,7 @@ pub struct Contract {
     pub storage_deposits: LookupMap<AccountId, Balance>,
     pub by_owner_id: LookupMap<AccountId, UnorderedSet<TokenId>>,
     pub offers: UnorderedMap<ContractAccountIdTokenId, OfferData>,
-    pub paras_nft_contracts: UnorderedSet<AccountId>,
+    pub marble_nft_contracts: UnorderedSet<AccountId>,
     pub transaction_fee: TransactionFee,
     pub trades: UnorderedMap<ContractAccountIdTokenId, TradeList>,
     pub market_data_transaction_fee: MarketDataTransactionFee,
@@ -204,11 +204,11 @@ pub enum StorageKey {
     ByOwnerId,
     ByOwnerIdInner { account_id_hash: CryptoHash },
     Offers,
-    ParasNFTContractIds,
+    MarbleNFTContractIds,
     MarketV2,
     MarketV3,
     OffersV2,
-    ParasNFTContractIdsV2,
+    MarbleNFTContractIdsV2,
     Trade,
     MarketDataTransactionFee,
 }
@@ -221,7 +221,7 @@ impl Contract {
         treasury_id: AccountId,
         approved_ft_token_ids: Option<Vec<AccountId>>,
         approved_nft_contract_ids: Option<Vec<AccountId>>,
-        paras_nft_contracts: Option<Vec<AccountId>>,
+        marble_nft_contracts: Option<Vec<AccountId>>,
         current_fee: u16,
     ) -> Self {
         let mut this = Self {
@@ -234,7 +234,7 @@ impl Contract {
             storage_deposits: LookupMap::new(StorageKey::StorageDeposits),
             by_owner_id: LookupMap::new(StorageKey::ByOwnerId),
             offers: UnorderedMap::new(StorageKey::Offers),
-            paras_nft_contracts: UnorderedSet::new(StorageKey::ParasNFTContractIds),
+            marble_nft_contracts: UnorderedSet::new(StorageKey::MarbleNFTContractIds),
             transaction_fee: TransactionFee {
                 next_fee: None,
                 start_time: None,
@@ -253,7 +253,7 @@ impl Contract {
             approved_nft_contract_ids,
             &mut this.approved_nft_contract_ids,
         );
-        add_accounts(paras_nft_contracts, &mut this.paras_nft_contracts);
+        add_accounts(marble_nft_contracts, &mut this.marble_nft_contracts);
 
         this
     }
@@ -277,7 +277,7 @@ impl Contract {
             storage_deposits: prev.storage_deposits,
             by_owner_id: prev.by_owner_id,
             offers: prev.offers,
-            paras_nft_contracts: prev.paras_nft_contracts,
+            marble_nft_contracts: prev.marble_nft_contracts,
             transaction_fee: prev.transaction_fee,
             trades: prev.trades,
             market_data_transaction_fee: MarketDataTransactionFee {
@@ -393,12 +393,12 @@ impl Contract {
         remove_accounts(Some(nft_contract_ids), &mut self.approved_nft_contract_ids);
     }
 
-    // Approved paras contracts
+    // Approved marble contracts
     #[payable]
-    pub fn add_approved_paras_nft_contract_ids(&mut self, nft_contract_ids: Vec<AccountId>) {
+    pub fn add_approved_marble_nft_contract_ids(&mut self, nft_contract_ids: Vec<AccountId>) {
         assert_one_yocto();
         self.assert_owner();
-        add_accounts(Some(nft_contract_ids), &mut self.paras_nft_contracts);
+        add_accounts(Some(nft_contract_ids), &mut self.marble_nft_contracts);
     }
 
     #[payable]
@@ -929,7 +929,7 @@ impl Contract {
             token_id.as_ref().unwrap().to_string()
         } else {
             assert!(
-                self.paras_nft_contracts.contains(&nft_contract_id),
+                self.marble_nft_contracts.contains(&nft_contract_id),
                 "Marble: offer series for Marble NFT only"
             );
             token_series_id.as_ref().unwrap().to_string()
@@ -1408,7 +1408,7 @@ impl Contract {
             token_id.as_ref().unwrap().to_string()
         } else {
             assert!(
-                self.paras_nft_contracts.contains(&nft_contract_id),
+                self.marble_nft_contracts.contains(&nft_contract_id),
                 "Marble: trade series for Marble NFT only"
             );
             token_series_id.as_ref().unwrap().to_string()

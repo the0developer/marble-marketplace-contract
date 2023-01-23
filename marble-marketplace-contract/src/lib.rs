@@ -1,6 +1,6 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, UnorderedSet};
-use near_sdk::json_types::{U128, U64, ValidAccountId};
+use near_sdk::json_types::{ValidAccountId, U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
     assert_one_yocto, env, ext_contract, near_bindgen, serde_json::json, AccountId, Balance,
@@ -11,10 +11,10 @@ use std::collections::HashMap;
 
 use crate::external::*;
 
-mod utils;
 mod external;
 mod nft_callbacks;
 mod token_receiver;
+mod utils;
 
 const GAS_FOR_NFT_TRANSFER: Gas = Gas(20_000_000_000_000);
 const BASE_GAS: Gas = Gas(5_000_000_000_000);
@@ -93,13 +93,13 @@ pub struct MarketData {
     pub accept_nft_contract_id: Option<String>,
     pub accept_token_id: Option<String>,
     pub is_auction: Option<bool>,
-    pub reserve_price: Option<u128>
+    pub reserve_price: Option<u128>,
 }
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct MarketDataTransactionFee {
-    pub transaction_fee: UnorderedMap<ContractAndTokenId, u128>
+    pub transaction_fee: UnorderedMap<ContractAndTokenId, u128>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
@@ -152,7 +152,7 @@ pub struct MarketDataJson {
     is_auction: Option<bool>,
     transaction_fee: U128,
     reserve_price: Option<U128>,
-    current_time: TimestampSec
+    current_time: TimestampSec,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -192,7 +192,7 @@ pub struct Contract {
     pub paras_nft_contracts: UnorderedSet<AccountId>,
     pub transaction_fee: TransactionFee,
     pub trades: UnorderedMap<ContractAccountIdTokenId, TradeList>,
-    pub market_data_transaction_fee: MarketDataTransactionFee
+    pub market_data_transaction_fee: MarketDataTransactionFee,
 }
 
 #[derive(BorshStorageKey, BorshSerialize)]
@@ -202,9 +202,7 @@ pub enum StorageKey {
     NFTContractIds,
     StorageDeposits,
     ByOwnerId,
-    ByOwnerIdInner {
-        account_id_hash: CryptoHash,
-    },
+    ByOwnerIdInner { account_id_hash: CryptoHash },
     Offers,
     ParasNFTContractIds,
     MarketV2,
@@ -212,7 +210,7 @@ pub enum StorageKey {
     OffersV2,
     ParasNFTContractIdsV2,
     Trade,
-    MarketDataTransactionFee
+    MarketDataTransactionFee,
 }
 
 #[near_bindgen]
@@ -243,9 +241,9 @@ impl Contract {
                 current_fee,
             },
             trades: UnorderedMap::new(StorageKey::Trade),
-            market_data_transaction_fee: MarketDataTransactionFee{
-                transaction_fee: UnorderedMap::new(StorageKey::MarketDataTransactionFee)
-            }
+            market_data_transaction_fee: MarketDataTransactionFee {
+                transaction_fee: UnorderedMap::new(StorageKey::MarketDataTransactionFee),
+            },
         };
 
         this.approved_ft_token_ids.insert(&near_account());
@@ -282,9 +280,9 @@ impl Contract {
             paras_nft_contracts: prev.paras_nft_contracts,
             transaction_fee: prev.transaction_fee,
             trades: prev.trades,
-            market_data_transaction_fee: MarketDataTransactionFee{
-                transaction_fee: UnorderedMap::new(StorageKey::MarketDataTransactionFee)
-            }
+            market_data_transaction_fee: MarketDataTransactionFee {
+                transaction_fee: UnorderedMap::new(StorageKey::MarketDataTransactionFee),
+            },
         };
 
         this
@@ -321,9 +319,17 @@ impl Contract {
         }
     }
 
-    pub fn calculate_market_data_transaction_fee(&mut self, nft_contract_id: &AccountId, token_id: &TokenId) -> u128{
+    pub fn calculate_market_data_transaction_fee(
+        &mut self,
+        nft_contract_id: &AccountId,
+        token_id: &TokenId,
+    ) -> u128 {
         let contract_and_token_id = format!("{}{}{}", nft_contract_id, DELIMETER, token_id);
-        if let Some(transaction_fee) = self.market_data_transaction_fee.transaction_fee.get(&contract_and_token_id){
+        if let Some(transaction_fee) = self
+            .market_data_transaction_fee
+            .transaction_fee
+            .get(&contract_and_token_id)
+        {
             return transaction_fee;
         }
 
@@ -347,9 +353,17 @@ impl Contract {
         &self.transaction_fee
     }
 
-    pub fn get_market_data_transaction_fee (self, nft_contract_id: &AccountId, token_id: &TokenId) -> u128{
+    pub fn get_market_data_transaction_fee(
+        self,
+        nft_contract_id: &AccountId,
+        token_id: &TokenId,
+    ) -> u128 {
         let contract_and_token_id = format!("{}{}{}", nft_contract_id, DELIMETER, token_id);
-        if let Some(transaction_fee) = self.market_data_transaction_fee.transaction_fee.get(&contract_and_token_id){
+        if let Some(transaction_fee) = self
+            .market_data_transaction_fee
+            .transaction_fee
+            .get(&contract_and_token_id)
+        {
             return transaction_fee;
         }
 
@@ -421,7 +435,7 @@ impl Contract {
                     accept_nft_contract_id: None,
                     accept_token_id: None,
                     is_auction: None,
-                    reserve_price: None
+                    reserve_price: None,
                 })
             } else if let Some(market_data) = self.market.get(&contract_and_token_id) {
                 Some(market_data)
@@ -513,7 +527,7 @@ impl Contract {
                     accept_nft_contract_id: None,
                     accept_token_id: None,
                     is_auction: None,
-                    reserve_price: None
+                    reserve_price: None,
                 })
             } else if let Some(market_data) = self.market.get(&contract_and_token_id) {
                 Some(market_data)
@@ -537,12 +551,8 @@ impl Contract {
         //     "Marble: NEAR support only"
         // );
 
-        assert_eq!(
-            ft_token_id.to_string(),
-            market_data.ft_token_id.to_string()
-        );
+        assert_eq!(ft_token_id.to_string(), market_data.ft_token_id.to_string());
         assert_eq!(price, market_data.price.into());
-
 
         let mut price = market_data.price;
 
@@ -627,19 +637,17 @@ impl Contract {
                         }
                     })
             } else {
-                parsed_payout
-                    .ok()
-                    .and_then(|payout| {
-                        let mut remainder = price.0;
-                        for &value in payout.values() {
-                            remainder = remainder.checked_sub(value.0)?;
-                        }
-                        if remainder <= 100 {
-                            Some(payout)
-                        } else {
-                            None
-                        }
-                    })
+                parsed_payout.ok().and_then(|payout| {
+                    let mut remainder = price.0;
+                    for &value in payout.values() {
+                        remainder = remainder.checked_sub(value.0)?;
+                    }
+                    if remainder <= 100 {
+                        Some(payout)
+                    } else {
+                        None
+                    }
+                })
             }
         });
         let payout = if let Some(payout_option) = payout_option {
@@ -657,26 +665,44 @@ impl Contract {
                         market_data.ft_token_id.clone(),
                         1,
                         GAS_FOR_FT_TRANSFER,
-                    ).then(ext_self::callback_post_withdraw_deposit(market_data.ft_token_id.clone(), buyer_id.clone(), price.0.into(), env::current_account_id(), 0, GAS_FOR_FT_TRANSFER));
+                    )
+                    .then(ext_self::callback_post_withdraw_deposit(
+                        market_data.ft_token_id.clone(),
+                        buyer_id.clone(),
+                        price.0.into(),
+                        env::current_account_id(),
+                        0,
+                        GAS_FOR_FT_TRANSFER,
+                    ));
                 }
                 env::log_str(
                     &json!({
-                    "type": "resolve_purchase_fail",
-                    "params": {
-                        "owner_id": market_data.owner_id,
-                        "nft_contract_id": market_data.nft_contract_id,
-                        "token_id": market_data.token_id,
-                        "ft_token_id": market_data.ft_token_id,
-                        "price": price,
-                        "buyer_id": buyer_id,
-                    }
-                })
-                        .to_string(),
+                        "type": "resolve_purchase_fail",
+                        "params": {
+                            "owner_id": market_data.owner_id,
+                            "nft_contract_id": market_data.nft_contract_id,
+                            "token_id": market_data.token_id,
+                            "ft_token_id": market_data.ft_token_id,
+                            "price": price,
+                            "buyer_id": buyer_id,
+                        }
+                    })
+                    .to_string(),
                 );
             } else {
-                let treasury_fee = price.0 * self.calculate_market_data_transaction_fee(&market_data.nft_contract_id, &market_data.token_id) / 10_000u128;
-                let contract_and_token_id = format!("{}{}{}", &market_data.nft_contract_id, DELIMETER, &market_data.token_id);
-                self.market_data_transaction_fee.transaction_fee.remove(&contract_and_token_id);
+                let treasury_fee = price.0
+                    * self.calculate_market_data_transaction_fee(
+                        &market_data.nft_contract_id,
+                        &market_data.token_id,
+                    )
+                    / 10_000u128;
+                let contract_and_token_id = format!(
+                    "{}{}{}",
+                    &market_data.nft_contract_id, DELIMETER, &market_data.token_id
+                );
+                self.market_data_transaction_fee
+                    .transaction_fee
+                    .remove(&contract_and_token_id);
 
                 if market_data.ft_token_id == near_account() {
                     Promise::new(market_data.owner_id.clone()).transfer(price.0 - treasury_fee);
@@ -691,7 +717,15 @@ impl Contract {
                         market_data.ft_token_id.clone(),
                         1,
                         GAS_FOR_FT_TRANSFER,
-                    ).then(ext_self::callback_post_withdraw_deposit(market_data.ft_token_id.clone(), market_data.owner_id.clone(), (price.0 - treasury_fee).into(), env::current_account_id(), 0, GAS_FOR_FT_TRANSFER));
+                    )
+                    .then(ext_self::callback_post_withdraw_deposit(
+                        market_data.ft_token_id.clone(),
+                        market_data.owner_id.clone(),
+                        (price.0 - treasury_fee).into(),
+                        env::current_account_id(),
+                        0,
+                        GAS_FOR_FT_TRANSFER,
+                    ));
                     if treasury_fee > 0 {
                         ext_fungible_token::ft_transfer(
                             self.treasury_id.clone(),
@@ -700,32 +734,50 @@ impl Contract {
                             market_data.ft_token_id.clone(),
                             1,
                             GAS_FOR_FT_TRANSFER,
-                        ).then(ext_self::callback_post_withdraw_deposit(market_data.ft_token_id.clone(), self.treasury_id.clone(), (treasury_fee).into(), env::current_account_id(), 0, GAS_FOR_FT_TRANSFER));
+                        )
+                        .then(ext_self::callback_post_withdraw_deposit(
+                            market_data.ft_token_id.clone(),
+                            self.treasury_id.clone(),
+                            (treasury_fee).into(),
+                            env::current_account_id(),
+                            0,
+                            GAS_FOR_FT_TRANSFER,
+                        ));
                     }
                 }
 
                 env::log_str(
                     &json!({
-                    "type": "resolve_purchase",
-                    "params": {
-                        "owner_id": &market_data.owner_id,
-                        "nft_contract_id": &market_data.nft_contract_id,
-                        "token_id": &market_data.token_id,
-                        "ft_token_id": market_data.ft_token_id,
-                        "price": price,
-                        "buyer_id": buyer_id,
-                    }
-                })
-                        .to_string(),
+                        "type": "resolve_purchase",
+                        "params": {
+                            "owner_id": &market_data.owner_id,
+                            "nft_contract_id": &market_data.nft_contract_id,
+                            "token_id": &market_data.token_id,
+                            "ft_token_id": market_data.ft_token_id,
+                            "price": price,
+                            "buyer_id": buyer_id,
+                        }
+                    })
+                    .to_string(),
                 );
             }
             return price;
         };
 
         // 5% fee for treasury
-        let treasury_fee = price.0 * self.calculate_market_data_transaction_fee(&market_data.nft_contract_id, &market_data.token_id) / 10_000u128;
-        let contract_and_token_id = format!("{}{}{}", &market_data.nft_contract_id, DELIMETER, &market_data.token_id);
-        self.market_data_transaction_fee.transaction_fee.remove(&contract_and_token_id);
+        let treasury_fee = price.0
+            * self.calculate_market_data_transaction_fee(
+                &market_data.nft_contract_id,
+                &market_data.token_id,
+            )
+            / 10_000u128;
+        let contract_and_token_id = format!(
+            "{}{}{}",
+            &market_data.nft_contract_id, DELIMETER, &market_data.token_id
+        );
+        self.market_data_transaction_fee
+            .transaction_fee
+            .remove(&contract_and_token_id);
 
         // Payout (transfer to royalties and seller)
         for (receiver_id, amount) in payout {
@@ -740,13 +792,20 @@ impl Contract {
                         market_data.ft_token_id.clone(),
                         1,
                         GAS_FOR_FT_TRANSFER,
-                    ).then(ext_self::callback_post_withdraw_deposit(market_data.ft_token_id.clone(), receiver_id.clone(), (amount.0 - treasury_fee).into(), env::current_account_id(), 0, GAS_FOR_FT_TRANSFER));
+                    )
+                    .then(ext_self::callback_post_withdraw_deposit(
+                        market_data.ft_token_id.clone(),
+                        receiver_id.clone(),
+                        (amount.0 - treasury_fee).into(),
+                        env::current_account_id(),
+                        0,
+                        GAS_FOR_FT_TRANSFER,
+                    ));
                 }
                 if treasury_fee != 0 {
                     if market_data.ft_token_id == near_account() {
                         Promise::new(self.treasury_id.clone()).transfer(treasury_fee);
-                    }
-                    else {
+                    } else {
                         ext_fungible_token::ft_transfer(
                             self.treasury_id.clone(),
                             (treasury_fee).into(),
@@ -754,7 +813,15 @@ impl Contract {
                             market_data.ft_token_id.clone(),
                             1,
                             GAS_FOR_FT_TRANSFER,
-                        ).then(ext_self::callback_post_withdraw_deposit(market_data.ft_token_id.clone(), self.treasury_id.clone(), (treasury_fee).into(), env::current_account_id(), 0, GAS_FOR_FT_TRANSFER));
+                        )
+                        .then(ext_self::callback_post_withdraw_deposit(
+                            market_data.ft_token_id.clone(),
+                            self.treasury_id.clone(),
+                            (treasury_fee).into(),
+                            env::current_account_id(),
+                            0,
+                            GAS_FOR_FT_TRANSFER,
+                        ));
                     }
                 }
             } else {
@@ -768,7 +835,15 @@ impl Contract {
                         market_data.ft_token_id.clone(),
                         1,
                         GAS_FOR_FT_TRANSFER,
-                    ).then(ext_self::callback_post_withdraw_deposit(market_data.ft_token_id.clone(), receiver_id.clone(), (amount.0).into(), env::current_account_id(), 0, GAS_FOR_FT_TRANSFER));
+                    )
+                    .then(ext_self::callback_post_withdraw_deposit(
+                        market_data.ft_token_id.clone(),
+                        receiver_id.clone(),
+                        (amount.0).into(),
+                        env::current_account_id(),
+                        0,
+                        GAS_FOR_FT_TRANSFER,
+                    ));
                 }
             }
         }
@@ -932,9 +1007,7 @@ impl Contract {
 
         match offer_data {
             Some(offer) => {
-                let by_owner_id = self
-                    .by_owner_id
-                    .get(&offer.buyer_id);
+                let by_owner_id = self.by_owner_id.get(&offer.buyer_id);
                 if let Some(mut by_owner_id) = by_owner_id {
                     by_owner_id.remove(&contract_account_id_token_id);
                     if by_owner_id.is_empty() {
@@ -1070,7 +1143,6 @@ impl Contract {
             )
             .expect("Marble: Offer does not exist");
 
-
         ext_contract::nft_transfer_payout(
             offer_data.buyer_id.clone(),
             token_id.clone(),
@@ -1192,26 +1264,29 @@ impl Contract {
         } else {
             if !is_promise_success() {
                 if offer_data.ft_token_id == near_account() {
-                    Promise::new(offer_data.buyer_id.clone()).transfer(u128::from(offer_data.price));
+                    Promise::new(offer_data.buyer_id.clone())
+                        .transfer(u128::from(offer_data.price));
                     env::log_str(
                         &json!({
-                    "type": "resolve_purchase_fail",
-                    "params": {
-                        "owner_id": seller_id,
-                        "nft_contract_id": offer_data.nft_contract_id,
-                        "token_id": token_id,
-                        "token_series_id": offer_data.token_series_id,
-                        "ft_token_id": offer_data.ft_token_id,
-                        "price": offer_data.price.to_string(),
-                        "buyer_id": offer_data.buyer_id,
-                        "is_offer": true,
-                    }
-                }).to_string(),
+                            "type": "resolve_purchase_fail",
+                            "params": {
+                                "owner_id": seller_id,
+                                "nft_contract_id": offer_data.nft_contract_id,
+                                "token_id": token_id,
+                                "token_series_id": offer_data.token_series_id,
+                                "ft_token_id": offer_data.ft_token_id,
+                                "price": offer_data.price.to_string(),
+                                "buyer_id": offer_data.buyer_id,
+                                "is_offer": true,
+                            }
+                        })
+                        .to_string(),
                     );
                 }
             } else if offer_data.ft_token_id == near_account() {
-                let treasury_fee =
-                    offer_data.price as u128 * self.calculate_current_transaction_fee() / 10_000u128;
+                let treasury_fee = offer_data.price as u128
+                    * self.calculate_current_transaction_fee()
+                    / 10_000u128;
                 Promise::new(seller_id.clone()).transfer(offer_data.price - treasury_fee);
                 if treasury_fee > 0 {
                     Promise::new(self.treasury_id.clone()).transfer(treasury_fee);
@@ -1219,19 +1294,19 @@ impl Contract {
 
                 env::log_str(
                     &json!({
-                    "type": "resolve_purchase",
-                    "params": {
-                        "owner_id": seller_id,
-                        "nft_contract_id": &offer_data.nft_contract_id,
-                        "token_id": &token_id,
-                        "token_series_id": offer_data.token_series_id,
-                        "ft_token_id": offer_data.ft_token_id,
-                        "price": offer_data.price.to_string(),
-                        "buyer_id": offer_data.buyer_id,
-                        "is_offer": true,
-                    }
-                })
-                        .to_string(),
+                        "type": "resolve_purchase",
+                        "params": {
+                            "owner_id": seller_id,
+                            "nft_contract_id": &offer_data.nft_contract_id,
+                            "token_id": &token_id,
+                            "token_series_id": offer_data.token_series_id,
+                            "ft_token_id": offer_data.ft_token_id,
+                            "price": offer_data.price.to_string(),
+                            "buyer_id": offer_data.buyer_id,
+                            "is_offer": true,
+                        }
+                    })
+                    .to_string(),
                 );
             }
             return offer_data.price.into();
@@ -1530,7 +1605,7 @@ impl Contract {
             assert_eq!(trade_data.token_series_id.as_ref().unwrap(), token);
         }
 
-        return trade_data.clone()
+        return trade_data.clone();
     }
 
     fn internal_accept_trade(
@@ -1546,7 +1621,6 @@ impl Contract {
         let buyer_contract_account_id_token_id =
             make_triple(&buyer_nft_contract_id, &buyer_id, &buyer_token_id);
         let contract_account_id_token_id = make_triple(&nft_contract_id, &buyer_id, &token_id);
-
 
         let trade_list = self
             .trades
@@ -1564,10 +1638,10 @@ impl Contract {
         let seller_contract_account_id_token_id =
             make_triple(&nft_contract_id, &seller_id, &token_id);
 
-        if let Some(mut trades) = self.trades.get(&seller_contract_account_id_token_id){
+        if let Some(mut trades) = self.trades.get(&seller_contract_account_id_token_id) {
             trades.trade_data.clear();
         }
-        if let Some(mut trades) = self.trades.get(&buyer_contract_account_id_token_id){
+        if let Some(mut trades) = self.trades.get(&buyer_contract_account_id_token_id) {
             trades.trade_data.clear();
         }
         self.trades.remove(&seller_contract_account_id_token_id);
@@ -1603,7 +1677,6 @@ impl Contract {
             make_triple(&buyer_nft_contract_id, &buyer_id, &buyer_token_id);
         let contract_account_id_token_id =
             make_triple(&nft_contract_id, &buyer_id, &token_series_id);
-
 
         let trade_list = self
             .trades
@@ -1814,23 +1887,26 @@ impl Contract {
 
         let remaining_time = market_data.ended_at.unwrap() - current_time;
         if remaining_time <= FIVE_MINUTES {
-          let extended_ended_at = market_data.ended_at.unwrap() + FIVE_MINUTES;
-          market_data.ended_at = Some(extended_ended_at);
+            let extended_ended_at = market_data.ended_at.unwrap() + FIVE_MINUTES;
+            market_data.ended_at = Some(extended_ended_at);
 
-          env::log_str(
-            &json!({
-                "type": "extend_auction",
-                "params": {
-                    "nft_contract_id": nft_contract_id,
-                    "token_id": token_id,
-                    "ended_at": extended_ended_at,
-                }
-            })
-            .to_string(),
-          );
+            env::log_str(
+                &json!({
+                    "type": "extend_auction",
+                    "params": {
+                        "nft_contract_id": nft_contract_id,
+                        "token_id": token_id,
+                        "ended_at": extended_ended_at,
+                    }
+                })
+                .to_string(),
+            );
         }
 
-        assert_ne!(market_data.owner_id, bidder_id, "Marble: Owner cannot bid their own token");
+        assert_ne!(
+            market_data.owner_id, bidder_id,
+            "Marble: Owner cannot bid their own token"
+        );
 
         assert!(
             env::attached_deposit() >= amount.into(),
@@ -1838,7 +1914,11 @@ impl Contract {
         );
 
         assert_eq!(ft_token_id.to_string(), "near", "Marble: Only support NEAR");
-        assert_eq!(market_data.ft_token_id.to_string(), "near", "Marble: Only support Registered token");
+        assert_eq!(
+            market_data.ft_token_id.to_string(),
+            "near",
+            "Marble: Only support Registered token"
+        );
 
         assert!(
             market_data.end_price.is_none(),
@@ -1856,9 +1936,9 @@ impl Contract {
             let current_bid = &bids[bids.len() - 1];
 
             assert!(
-              amount.0 >= current_bid.price.0 + (current_bid.price.0 / 100 * 5),
-              "Marble: Can't pay less than or equal to current bid price + 5% : {:?}",
-              current_bid.price.0 + (current_bid.price.0 / 100 * 5)
+                amount.0 >= current_bid.price.0 + (current_bid.price.0 / 100 * 5),
+                "Marble: Can't pay less than or equal to current bid price + 5% : {:?}",
+                current_bid.price.0 + (current_bid.price.0 / 100 * 5)
             );
 
             assert!(
@@ -1869,12 +1949,12 @@ impl Contract {
 
             // Retain all elements except account_id
             bids.retain(|bid| {
-              if bid.bidder_id == bidder_id {
-                // refund
-                Promise::new(bid.bidder_id.clone()).transfer(bid.price.0);
-              }
+                if bid.bidder_id == bidder_id {
+                    // refund
+                    Promise::new(bid.bidder_id.clone()).transfer(bid.price.0);
+                }
 
-              bid.bidder_id != bidder_id
+                bid.bidder_id != bidder_id
             });
         } else {
             assert!(
@@ -1891,7 +1971,11 @@ impl Contract {
         // Remove first element if bids.length > 50
         let updated_bids = market_data.bids.unwrap_or(Vec::new());
         if updated_bids.len() >= 100 {
-          self.internal_cancel_bid(nft_contract_id.clone(), token_id.clone(), updated_bids[0].bidder_id.clone())
+            self.internal_cancel_bid(
+                nft_contract_id.clone(),
+                token_id.clone(),
+                updated_bids[0].bidder_id.clone(),
+            )
         }
 
         env::log_str(
@@ -1934,7 +2018,10 @@ impl Contract {
             );
         }
 
-        println!("\n\n\nFT TOken Bid Added: {}, {}, {}", bidder_id, ft_token_id, token_id);
+        println!(
+            "\n\n\nFT TOken Bid Added: {}, {}, {}",
+            bidder_id, ft_token_id, token_id
+        );
 
         if market_data.ended_at.is_some() {
             assert!(
@@ -1945,25 +2032,32 @@ impl Contract {
 
         let remaining_time = market_data.ended_at.unwrap() - current_time;
         if remaining_time <= FIVE_MINUTES {
-          let extended_ended_at = market_data.ended_at.unwrap() + FIVE_MINUTES;
-          market_data.ended_at = Some(extended_ended_at);
+            let extended_ended_at = market_data.ended_at.unwrap() + FIVE_MINUTES;
+            market_data.ended_at = Some(extended_ended_at);
 
-          env::log_str(
-            &json!({
-                "type": "extend_auction",
-                "params": {
-                    "nft_contract_id": nft_contract_id,
-                    "token_id": token_id,
-                    "ended_at": extended_ended_at,
-                }
-            })
-            .to_string(),
-          );
+            env::log_str(
+                &json!({
+                    "type": "extend_auction",
+                    "params": {
+                        "nft_contract_id": nft_contract_id,
+                        "token_id": token_id,
+                        "ended_at": extended_ended_at,
+                    }
+                })
+                .to_string(),
+            );
         }
 
-        assert_ne!(market_data.owner_id, bidder_id, "Marble: Owner cannot bid their own token");
+        assert_ne!(
+            market_data.owner_id, bidder_id,
+            "Marble: Owner cannot bid their own token"
+        );
 
-        assert_eq!(ft_token_id.to_string(), market_data.ft_token_id.to_string(), "Marble: Only support Registered token");
+        assert_eq!(
+            ft_token_id.to_string(),
+            market_data.ft_token_id.to_string(),
+            "Marble: Only support Registered token"
+        );
 
         assert!(
             market_data.end_price.is_none(),
@@ -1981,9 +2075,9 @@ impl Contract {
             let current_bid = &bids[bids.len() - 1];
 
             assert!(
-              amount.0 >= current_bid.price.0 + (current_bid.price.0 / 100 * 5),
-              "Marble: Can't pay less than or equal to current bid price + 5% : {:?}",
-              current_bid.price.0 + (current_bid.price.0 / 100 * 5)
+                amount.0 >= current_bid.price.0 + (current_bid.price.0 / 100 * 5),
+                "Marble: Can't pay less than or equal to current bid price + 5% : {:?}",
+                current_bid.price.0 + (current_bid.price.0 / 100 * 5)
             );
 
             assert!(
@@ -1993,19 +2087,27 @@ impl Contract {
             );
             // Retain all elements except account_id
             bids.retain(|bid| {
-              if bid.bidder_id == bidder_id {
-                // refund
-                ext_fungible_token::ft_transfer(
-                    bidder_id.clone(),
-                    bid.price.into(),
-                    None,
-                    ft_token_id.clone(),
-                    1,
-                    GAS_FOR_FT_TRANSFER,
-                ).then(ext_self::callback_post_withdraw_deposit(ft_token_id.clone(), bidder_id.clone(), amount, env::current_account_id(), 0, GAS_FOR_FT_TRANSFER));
-              }
+                if bid.bidder_id == bidder_id {
+                    // refund
+                    ext_fungible_token::ft_transfer(
+                        bidder_id.clone(),
+                        bid.price.into(),
+                        None,
+                        ft_token_id.clone(),
+                        1,
+                        GAS_FOR_FT_TRANSFER,
+                    )
+                    .then(ext_self::callback_post_withdraw_deposit(
+                        ft_token_id.clone(),
+                        bidder_id.clone(),
+                        amount,
+                        env::current_account_id(),
+                        0,
+                        GAS_FOR_FT_TRANSFER,
+                    ));
+                }
 
-              bid.bidder_id != bidder_id
+                bid.bidder_id != bidder_id
             });
         } else {
             assert!(
@@ -2022,7 +2124,11 @@ impl Contract {
         // Remove first element if bids.length > 50
         let updated_bids = market_data.bids.unwrap_or(Vec::new());
         if updated_bids.len() >= 100 {
-          self.internal_cancel_bid(nft_contract_id.clone(), token_id.clone(), updated_bids[0].bidder_id.clone())
+            self.internal_cancel_bid(
+                nft_contract_id.clone(),
+                token_id.clone(),
+                updated_bids[0].bidder_id.clone(),
+            )
         }
 
         env::log_str(
@@ -2070,87 +2176,95 @@ impl Contract {
         U128(0)
     }
 
-    fn internal_cancel_bid(&mut self, nft_contract_id: AccountId, token_id: TokenId, account_id: AccountId) {
-      let contract_and_token_id = format!("{}{}{}", &nft_contract_id, DELIMETER, token_id);
-      let mut market_data = self
-        .market
-        .get(&contract_and_token_id)
-        .expect("Marble: Token id does not exist");
+    fn internal_cancel_bid(
+        &mut self,
+        nft_contract_id: AccountId,
+        token_id: TokenId,
+        account_id: AccountId,
+    ) {
+        let contract_and_token_id = format!("{}{}{}", &nft_contract_id, DELIMETER, token_id);
+        let mut market_data = self
+            .market
+            .get(&contract_and_token_id)
+            .expect("Marble: Token id does not exist");
 
-      let mut bids = market_data.bids.unwrap();
+        let mut bids = market_data.bids.unwrap();
 
-      assert!(
-        !bids.is_empty(),
-        "Marble: Bids data does not exist"
-      );
+        assert!(!bids.is_empty(), "Marble: Bids data does not exist");
 
-    let ft_token = market_data.ft_token_id.clone();
-    for x in 0..bids.len() {
-        if bids[x].bidder_id == account_id {
-            if ft_token.clone() == near_account() {
-                // Retain all elements except account_id
-                Promise::new(bids[x].bidder_id.clone()).transfer(bids[x].price.0);
-            } else {
-                // Retain all elements except account_id
-                ext_fungible_token::ft_transfer(
-                    bids[x].bidder_id.clone(),
-                    (bids[x].price.0).into(),
-                    None,
-                    ft_token.clone(),
-                    1,
-                    GAS_FOR_FT_TRANSFER,
-                ).then(ext_self::callback_post_withdraw_deposit(ft_token.clone(), bids[x].bidder_id.clone(), bids[x].price.0.into(), env::current_account_id(), 0, GAS_FOR_FT_TRANSFER));
-            
+        let ft_token = market_data.ft_token_id.clone();
+        for x in 0..bids.len() {
+            if bids[x].bidder_id == account_id {
+                if ft_token.clone() == near_account() {
+                    // Retain all elements except account_id
+                    Promise::new(bids[x].bidder_id.clone()).transfer(bids[x].price.0);
+                } else {
+                    // Retain all elements except account_id
+                    ext_fungible_token::ft_transfer(
+                        bids[x].bidder_id.clone(),
+                        (bids[x].price.0).into(),
+                        None,
+                        ft_token.clone(),
+                        1,
+                        GAS_FOR_FT_TRANSFER,
+                    )
+                    .then(ext_self::callback_post_withdraw_deposit(
+                        ft_token.clone(),
+                        bids[x].bidder_id.clone(),
+                        bids[x].price.0.into(),
+                        env::current_account_id(),
+                        0,
+                        GAS_FOR_FT_TRANSFER,
+                    ));
+                }
             }
-
         }
-      }
 
-    bids.retain(|bid| {
-        bid.bidder_id != account_id
-    });
+        bids.retain(|bid| bid.bidder_id != account_id);
 
-      market_data.bids = Some(bids);
-      self.market.insert(&contract_and_token_id, &market_data);
+        market_data.bids = Some(bids);
+        self.market.insert(&contract_and_token_id, &market_data);
 
-      env::log_str(
-        &json!({
-          "type": "cancel_bid",
-          "params": {
-            "bidder_id": account_id, "nft_contract_id": nft_contract_id, "token_id": token_id
-          }
-        })
-        .to_string(),
-      );
+        env::log_str(
+            &json!({
+              "type": "cancel_bid",
+              "params": {
+                "bidder_id": account_id, "nft_contract_id": nft_contract_id, "token_id": token_id
+              }
+            })
+            .to_string(),
+        );
     }
 
     #[payable]
-    pub fn cancel_bid(&mut self, nft_contract_id: AccountId, token_id: TokenId, account_id: AccountId) {
-      assert_one_yocto();
-      let contract_and_token_id = format!("{}{}{}", &nft_contract_id, DELIMETER, token_id);
-      let market_data = self
-        .market
-        .get(&contract_and_token_id)
-        .expect("Marble: Token id does not exist");
+    pub fn cancel_bid(
+        &mut self,
+        nft_contract_id: AccountId,
+        token_id: TokenId,
+        account_id: AccountId,
+    ) {
+        assert_one_yocto();
+        let contract_and_token_id = format!("{}{}{}", &nft_contract_id, DELIMETER, token_id);
+        let market_data = self
+            .market
+            .get(&contract_and_token_id)
+            .expect("Marble: Token id does not exist");
 
-      let bids = market_data.bids.unwrap();
+        let bids = market_data.bids.unwrap();
 
-      assert!(
-        !bids.is_empty(),
-        "Marble: Bids data does not exist"
-      );
+        assert!(!bids.is_empty(), "Marble: Bids data does not exist");
 
-      for x in 0..bids.len() {
-        if bids[x].bidder_id == account_id {
-          assert!(
-            [bids[x].bidder_id.clone(), self.owner_id.clone()]
-              .contains(&env::predecessor_account_id()),
-              "Marble: Bidder or owner only"
-          );
+        for x in 0..bids.len() {
+            if bids[x].bidder_id == account_id {
+                assert!(
+                    [bids[x].bidder_id.clone(), self.owner_id.clone()]
+                        .contains(&env::predecessor_account_id()),
+                    "Marble: Bidder or owner only"
+                );
+            }
         }
-      }
 
-      self.internal_cancel_bid(nft_contract_id, token_id, account_id,);
+        self.internal_cancel_bid(nft_contract_id, token_id, account_id);
     }
 
     #[payable]
@@ -2163,30 +2277,47 @@ impl Contract {
             .expect("Marble: Token id does not exist");
         let current_time: u64 = env::block_timestamp();
 
-        println!("\nAccept Bid Accounts {:?}, {:?}, {:?}", market_data.owner_id.clone(), self.owner_id.clone(), env::predecessor_account_id());
-        assert!(
-          [market_data.owner_id.clone(), self.owner_id.clone()]
-            .contains(&env::predecessor_account_id()),
-            "Marble: Seller or owner only"
-        );
-
-        // if env::predecessor_account_id() == self.owner_id && market_data.ended_at.is_some() {
-        //   assert!(
-        //     current_time >= market_data.ended_at.unwrap(),
-        //     "Marble: Auction has not ended yet"
-        //   );
-        // }
-
-        assert!(
-            market_data.end_price.is_none(),
-            "Marble: Dutch auction does not accept accept_bid"
-        );
-
         let mut bids = market_data.bids.unwrap();
 
         assert!(!bids.is_empty(), "Marble: Cannot accept bid with empty bid");
 
         let selected_bid = bids.remove(bids.len() - 1);
+
+        println!(
+            "\nAccept Bid Accounts {:?}, {:?}, {:?}",
+            market_data.owner_id.clone(),
+            self.owner_id.clone(),
+            env::predecessor_account_id()
+        );
+        assert!(
+            [
+                market_data.owner_id.clone(),
+                self.owner_id.clone(),
+                selected_bid.bidder_id.clone()
+            ]
+            .contains(&env::predecessor_account_id()),
+            "Marble: Seller, owner or top bidder only"
+        );
+
+        if env::predecessor_account_id() != self.owner_id.clone() && market_data.ended_at.is_some()
+        {
+            assert!(
+                current_time >= market_data.ended_at.unwrap(),
+                "Marble: Auction has not ended yet"
+            );
+        }
+
+        if selected_bid.bidder_id == env::predecessor_account_id() {
+            assert!(
+                selected_bid.price.clone() > market_data.reserve_price.clone(),
+                "Marble: Your bid price isn't bigger than reserve price."
+            );
+        }
+
+        assert!(
+            market_data.end_price.is_none(),
+            "Marble: Dutch auction does not accept accept_bid"
+        );
 
         // refund all except selected bids
         for bid in &bids {
@@ -2201,7 +2332,15 @@ impl Contract {
                     market_data.ft_token_id.clone(),
                     1,
                     GAS_FOR_FT_TRANSFER,
-                ).then(ext_self::callback_post_withdraw_deposit(market_data.ft_token_id.clone(), bid.bidder_id.clone(), bid.price.0.into(), env::current_account_id(), 0, GAS_FOR_FT_TRANSFER));
+                )
+                .then(ext_self::callback_post_withdraw_deposit(
+                    market_data.ft_token_id.clone(),
+                    bid.bidder_id.clone(),
+                    bid.price.0.into(),
+                    env::current_account_id(),
+                    0,
+                    GAS_FOR_FT_TRANSFER,
+                ));
             }
         }
         bids.clear();
@@ -2226,7 +2365,7 @@ impl Contract {
         token_id: TokenId,
         ft_token_id: AccountId,
         price: U128,
-        mut reserve_price: Option<U128>
+        mut reserve_price: Option<U128>,
     ) {
         assert_one_yocto();
         let contract_and_token_id = format!("{}{}{}", nft_contract_id, DELIMETER, token_id);
@@ -2253,7 +2392,10 @@ impl Contract {
         );
 
         if reserve_price.is_some() {
-            assert!(reserve_price.unwrap().0 >= price.0, "Marble: Reserve price is more than starting price");
+            assert!(
+                reserve_price.unwrap().0 >= price.0,
+                "Marble: Reserve price is more than starting price"
+            );
         } else {
             reserve_price = price.into();
         }
@@ -2292,7 +2434,7 @@ impl Contract {
         ended_at: Option<U64>,
         end_price: Option<U128>,
         is_auction: Option<bool>,
-        mut reserve_price: Option<U128>
+        mut reserve_price: Option<U128>,
     ) {
         let contract_and_token_id = format!("{}{}{}", nft_contract_id, DELIMETER, token_id);
 
@@ -2319,7 +2461,12 @@ impl Contract {
             if ended_at.is_some() {
                 assert!(started_at.unwrap().0 < ended_at.unwrap().0);
             }
-            println!("\n\n\nstarted_at Price {:?},{:?},{:?}\n\n", started_at.unwrap(), current_time, env::block_timestamp());
+            println!(
+                "\n\n\nstarted_at Price {:?},{:?},{:?}\n\n",
+                started_at.unwrap(),
+                current_time,
+                env::block_timestamp()
+            );
         }
 
         if let Some(is_auction) = is_auction {
@@ -2343,7 +2490,10 @@ impl Contract {
         }
 
         if reserve_price.is_some() {
-            assert!(reserve_price.unwrap().0 >= price.0, "Marble: Reserve price is more than starting price");
+            assert!(
+                reserve_price.unwrap().0 >= price.0,
+                "Marble: Reserve price is more than starting price"
+            );
         } else {
             reserve_price = price.into();
         }
@@ -2383,7 +2533,7 @@ impl Contract {
                 reserve_price: match reserve_price {
                     Some(x) => Some(x.0),
                     None => None,
-                }
+                },
             },
         );
 
@@ -2411,10 +2561,11 @@ impl Contract {
                 .insert(&owner_contract_account_id_token_id, &trade_list);
         }
 
-
         // set market data transaction fee
         let current_transaction_fee = self.calculate_current_transaction_fee();
-        self.market_data_transaction_fee.transaction_fee.insert(&contract_and_token_id, &current_transaction_fee);
+        self.market_data_transaction_fee
+            .transaction_fee
+            .insert(&contract_and_token_id, &current_transaction_fee);
 
         env::log_str(
             &json!({
@@ -2444,61 +2595,67 @@ impl Contract {
     ) -> Option<MarketData> {
         let contract_and_token_id = format!("{}{}{}", &nft_contract_id, DELIMETER, token_id);
 
-        let market_data: Option<MarketData> =
-            if let Some(market_data) = self.old_market.get(&contract_and_token_id) {
-                self.old_market.remove(&contract_and_token_id);
-                Some(MarketData {
-                    owner_id: market_data.owner_id,
-                    approval_id: market_data.approval_id,
-                    nft_contract_id: market_data.nft_contract_id,
-                    token_id: market_data.token_id,
-                    ft_token_id: market_data.ft_token_id,
-                    price: market_data.price,
-                    bids: None,
-                    started_at: None,
-                    ended_at: None,
-                    end_price: None,
-                    accept_nft_contract_id: None,
-                    accept_token_id: None,
-                    is_auction: None,
-                    reserve_price: None
-                })
-            } else if let Some(market_data) = self.market.get(&contract_and_token_id) {
-                self.market.remove(&contract_and_token_id);
+        let market_data: Option<MarketData> = if let Some(market_data) =
+            self.old_market.get(&contract_and_token_id)
+        {
+            self.old_market.remove(&contract_and_token_id);
+            Some(MarketData {
+                owner_id: market_data.owner_id,
+                approval_id: market_data.approval_id,
+                nft_contract_id: market_data.nft_contract_id,
+                token_id: market_data.token_id,
+                ft_token_id: market_data.ft_token_id,
+                price: market_data.price,
+                bids: None,
+                started_at: None,
+                ended_at: None,
+                end_price: None,
+                accept_nft_contract_id: None,
+                accept_token_id: None,
+                is_auction: None,
+                reserve_price: None,
+            })
+        } else if let Some(market_data) = self.market.get(&contract_and_token_id) {
+            self.market.remove(&contract_and_token_id);
 
-                if let Some(ref bids) = market_data.bids {
-                    for bid in bids {
-                        if market_data.ft_token_id == near_account() {
-                            Promise::new(bid.bidder_id.clone()).transfer(bid.price.0);
-                        } else {
-                            ext_fungible_token::ft_transfer(
-                                bid.bidder_id.clone(),
-                                (bid.price.0).into(),
-                                None,
-                                market_data.ft_token_id.clone(),
-                                1,
-                                GAS_FOR_FT_TRANSFER,
-                            ).then(ext_self::callback_post_withdraw_deposit(market_data.ft_token_id.clone(), bid.bidder_id.clone(), bid.price.0.into(), env::current_account_id(), 0, GAS_FOR_FT_TRANSFER));
-                        
-                        }
+            if let Some(ref bids) = market_data.bids {
+                for bid in bids {
+                    if market_data.ft_token_id == near_account() {
+                        Promise::new(bid.bidder_id.clone()).transfer(bid.price.0);
+                    } else {
+                        ext_fungible_token::ft_transfer(
+                            bid.bidder_id.clone(),
+                            (bid.price.0).into(),
+                            None,
+                            market_data.ft_token_id.clone(),
+                            1,
+                            GAS_FOR_FT_TRANSFER,
+                        )
+                        .then(ext_self::callback_post_withdraw_deposit(
+                            market_data.ft_token_id.clone(),
+                            bid.bidder_id.clone(),
+                            bid.price.0.into(),
+                            env::current_account_id(),
+                            0,
+                            GAS_FOR_FT_TRANSFER,
+                        ));
                     }
-                };
-
-                Some(market_data)
-            } else {
-                None
+                }
             };
 
+            Some(market_data)
+        } else {
+            None
+        };
+
         market_data.map(|market_data| {
-            let by_owner_id = self
-                .by_owner_id
-                .get(&market_data.owner_id);
+            let by_owner_id = self.by_owner_id.get(&market_data.owner_id);
             if let Some(mut by_owner_id) = by_owner_id {
                 by_owner_id.remove(&contract_and_token_id);
                 if by_owner_id.is_empty() {
-                self.by_owner_id.remove(&market_data.owner_id);
+                    self.by_owner_id.remove(&market_data.owner_id);
                 } else {
-                self.by_owner_id.insert(&market_data.owner_id, &by_owner_id);
+                    self.by_owner_id.insert(&market_data.owner_id, &by_owner_id);
                 }
             }
             market_data
@@ -2527,7 +2684,7 @@ impl Contract {
                     accept_nft_contract_id: None,
                     accept_token_id: None,
                     is_auction: None,
-                    reserve_price: None
+                    reserve_price: None,
                 })
             } else if let Some(market_data) = self.market.get(&contract_and_token_id) {
                 Some(market_data)
@@ -2658,8 +2815,9 @@ impl Contract {
             }
         }
         let reserve_price = market_data.reserve_price.map(|x| x.into());
-        
-        let current_transaction_fee = self.get_market_data_transaction_fee(&market_data.nft_contract_id, &market_data.token_id);
+
+        let current_transaction_fee = self
+            .get_market_data_transaction_fee(&market_data.nft_contract_id, &market_data.token_id);
 
         MarketDataJson {
             owner_id: market_data.owner_id,
@@ -2675,7 +2833,7 @@ impl Contract {
             is_auction: market_data.is_auction,
             transaction_fee: current_transaction_fee.into(),
             reserve_price: reserve_price,
-            current_time: to_sec(env::block_timestamp())
+            current_time: to_sec(env::block_timestamp()),
         }
     }
 
@@ -2965,7 +3123,7 @@ mod tests {
             None,
             None,
             None,
-            None
+            None,
         );
 
         let market = contract.get_market_data(accounts(2), "1:1".to_string());
@@ -2996,7 +3154,7 @@ mod tests {
             None,
             None,
             None,
-            None
+            None,
         );
     }
 
@@ -3018,7 +3176,7 @@ mod tests {
             None,
             None,
             None,
-            None
+            None,
         );
 
         testing_env!(context
@@ -3031,7 +3189,7 @@ mod tests {
             "1:1".to_string(),
             near_account(),
             U128::from(1_000_000_000 * 10u128.pow(24)),
-            None
+            None,
         );
     }
 
@@ -3053,7 +3211,7 @@ mod tests {
             None,
             None,
             None,
-            None
+            None,
         );
 
         testing_env!(context
@@ -3066,7 +3224,7 @@ mod tests {
             "1:1".to_string(),
             near_account(),
             U128::from(2 * 10u128.pow(24)),
-            None
+            None,
         );
     }
 
@@ -3087,7 +3245,7 @@ mod tests {
             None,
             None,
             None,
-            None
+            None,
         );
 
         testing_env!(context
@@ -3100,7 +3258,7 @@ mod tests {
             "1:1".to_string(),
             near_account(),
             U128::from(2 * 10u128.pow(24)),
-            None
+            None,
         );
 
         let market = contract.get_market_data(accounts(2), "1:1".to_string());
@@ -3125,7 +3283,7 @@ mod tests {
             None,
             None,
             None,
-            None
+            None,
         );
 
         testing_env!(context
@@ -3316,7 +3474,7 @@ mod tests {
             Some(U64(1999999952971000000)),
             None,
             Some(true),
-            None
+            None,
         );
 
         let market = contract.get_market_data(accounts(2), "1:1".to_string());
@@ -3341,7 +3499,7 @@ mod tests {
             Some(U64(1999999952971000000)),
             None,
             Some(true),
-            None
+            None,
         );
 
         testing_env!(context
@@ -3369,7 +3527,7 @@ mod tests {
             Some(U64(1999999952971000000)),
             None,
             Some(true),
-            None
+            None,
         );
 
         testing_env!(context
@@ -3455,7 +3613,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transaction_fee_locked(){
+    fn test_transaction_fee_locked() {
         let (mut context, mut contract) = setup_contract();
 
         testing_env!(context
@@ -3483,7 +3641,7 @@ mod tests {
             None,
             None,
             None,
-            None
+            None,
         );
 
         assert_eq!(contract.get_transaction_fee().current_fee, 500);
@@ -3506,14 +3664,13 @@ mod tests {
         let market = contract.get_market_data(accounts(2), "1:1".to_string());
         let market_data_transaction_fee: u128 = market.transaction_fee.into();
         assert_eq!(market_data_transaction_fee, 500);
-
     }
 
     fn deposit_reward(
         context: &mut VMContextBuilder,
         contract: &mut Contract,
         amount: u128,
-        account: AccountId
+        account: AccountId,
     ) {
         testing_env!(context
             .predecessor_account_id(account)
@@ -3525,7 +3682,8 @@ mod tests {
             "token_id": "1:1",
             "amount": "10",
             "method": "auction"
-        }).to_string();
+        })
+        .to_string();
         contract.ft_on_transfer(accounts(0), U128(amount), msg);
     }
 
@@ -3551,10 +3709,15 @@ mod tests {
             Some(U64(1999999952971000000)),
             None,
             Some(true),
-            None
+            None,
         );
 
-        println!("User and FT: {}, {}, {}", accounts(2), accounts(5), accounts(3));
+        println!(
+            "User and FT: {}, {}, {}",
+            accounts(2),
+            accounts(5),
+            accounts(3)
+        );
         deposit_reward(&mut context, &mut contract, 100, accounts(2));
         deposit_reward(&mut context, &mut contract, 120, accounts(4));
         // let market = contract.get_market_data(accounts(2), "1:1".to_string());
@@ -3568,8 +3731,10 @@ mod tests {
         // contract.resolve_purchase(accounts(2), market, U128::from(1));
         let mut bids = market.bids.unwrap_or(Vec::new());
         for x in 0..bids.len() {
-            println!("\n\nMarketData: {:?}, {:?}", bids[x].bidder_id, bids[x].price);
+            println!(
+                "\n\nMarketData: {:?}, {:?}",
+                bids[x].bidder_id, bids[x].price
+            );
         }
     }
-
 }

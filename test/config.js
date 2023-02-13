@@ -1,6 +1,6 @@
-const marketplaceContractName = "dev-1648023319907-58748753844114";
-const nftContractName = "paras-token-v1.testnet";
-const ownerAccountName = "testingdo.testnet";
+const marketplaceContractName = "marketplace.marbledaonear.testnet";
+const nftContractName = "nft.marbledaonear.testnet";
+const ownerAccountName = "marbledaonear.testnet";
 
 module.exports = function getConfig(network = "testnet") {
   let config = {
